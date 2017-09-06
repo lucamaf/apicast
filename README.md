@@ -60,6 +60,6 @@ curl --request GET \
 
 ## References:
 https://medium.com/@Jenananthan/nginx-mutual-ssl-one-way-ssl-with-multiple-clients-ae87b3de0935
-
 https://www.nginx.com/resources/admin-guide/nginx-tcp-ssl-upstreams/
+
 http://apiman.io/blog/gateway/security/mutual-auth/ssl/mtls/1.2.x/2016/01/22/mtls-mutual-auth-redux.html
