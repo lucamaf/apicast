@@ -2,20 +2,29 @@
 
 ## Adding Basic Auth
 Basic Auth will just be an additional header value towards the Backend API
-First hash (Base64) the value of username:password and then you can add that to a header
+First hash (Base64) the value of ```username:password``` and then you can add that to a header
 ```
 Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 ```
 
 APIcast by default will read all `.conf` files in the `apicast.d` folder (and `location.d` subfolder) inside its prefix as part of the APIcast server configuration
-So just need to add the following line to an additional file (`srv_custom.conf`) to enable BASIC AUTH:
+So you just need to add the following line to an additional file (`srv_custom.conf`) to enable BASIC AUTH:
 ```
 proxy_set_header Authorization "Basic dXNlcm5hbWU6cGFzc3dvcmQ=;
 ```
-
-## Enabling Server SSL communication
+and place the file under:
+```
+apicast
+  |
+  |__apicast.d
+        |
+        |__location.d
+              |
+              |__srv_custom.conf
+```
+## Enabling Server SSL communication (APICAST to Application)
 ### Create public and private key for APICAST
-Execute the following command and create the public and private key by providing necessary information (remember this is self-signed so not for Production)
+Execute the following command and create the public and private key needed to enable SSL/TLS by providing necessary information (remember this is self-signed so not suitable for Production)
 ```
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout nginx.key -out nginx.crt
 ```
@@ -23,7 +32,11 @@ This will create nginx.key (private key) and nginx.crt (public key) files.
 
 ### Add certificate to APICAST
 Create a directory called `ssl` under `apicast` directory and copy the 2 files
-
+```
+apicast
+  |
+  |__ssl
+```
 ### Map the certificates
 Add an additional conf file (`ssl.conf`) under `apicast.d` directory which will be mapped inside the server section of the configuration
 with the following content
@@ -33,13 +46,18 @@ ssl_certificate ../ssl/nginx.crt;
 ssl_certificate_key ../ssl/nginx.key;
 ```
 
-## Enabling Client side SSL communication
-We can also enable the client side SSL communication towards the API Backend to guarantee additional security between the Service and the gateway and prevent any MITM attack
+## Enabling Client side SSL communication (API Backend to APICAST)
+We can also enable the client side SSL communication towards the API Backend to guarantee additional security between the Service and the gateway and prevent any MITM attack.
 This will result in the end in a E2E encryption of communication between the Backend API and the User App
-We are going to assume that you have already the client certificate and cert under hand
+We are going to assume that you have already the client certificate and public key under hand
 
 Create a directory under `apicast` folder with the 2 files (`mssl` folder in this example)
-Add the following lines to the previous file to send the certificates in the request towards Upstream server (`srv_custom.conf`):
+```
+apicast
+  |
+  |__mssl
+```
+Add the following lines to the initial file to send the certificates in the request towards Upstream server (`srv_custom.conf`):
 ```
 proxy_ssl_certificate ../mssl/cert.pem;
 proxy_ssl_certificate_key ../mssl/key_94744bc5-e945-457f-ad19-c98d1fe24c6f.pem;
@@ -50,6 +68,7 @@ Now you can start APICAST (native) with the whole set of additional files:
 ```
 THREESCALE_PORTAL_ENDPOINT=https://<access-token>@test-admin.3scale.net APICAST_LOG_FILE=logs/error.log APICAST_MANAGEMENT_API=debug APICAST_RESPONSE_CODES=true APICAST_CONFIGURATION_LOADER=boot bin/apicast -d -v -v -v -i 30 -e production
 ```
+In this case I've also decided to redirect the log, increase the debug level and update automatically the configuration every 30s.
 
 ## Testing
 ```
@@ -57,6 +76,7 @@ curl --request GET \
   --url https://<apicast-production-endpoint>:8443/aValidPath \
   --header 'user-key: <valid-user-key>'
 ```
+The gateway will add Basic Auth and Client Certificate in the call towards the API Backend. You can verify some of it using for example https://requestb.in
 
 ## References:
 https://medium.com/@Jenananthan/nginx-mutual-ssl-one-way-ssl-with-multiple-clients-ae87b3de0935
