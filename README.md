@@ -78,6 +78,27 @@ curl --request GET \
 ```
 The gateway will add Basic Auth and Client Certificate in the call towards the API Backend. You can verify some of it using for example https://requestb.in
 
+## OpenShift deployment
+With OpenShift you have to possibilites for APICAST customization:
+- S2I approach
+- Volume Mounting approach
+We will show the second one and we will leave out the Server SSL configuration as SSL/TLS can already be terminated at the router by using OpenShift routes.
+
+We will be using ConfigMap object (https://docs.openshift.org/latest/dev_guide/configmaps.html).
+We will first create the 2 ConfigMaps that we will mount to the gateway later:
+```
+oc create configmap mssl --from-file=/home/centos/srv_custom.conf
+oc create configmap mssld --from-file=/home/centos/mssl/
+```
+The first one will contain the first file we created (including Basic Auth code) and the second one the whole directory with cert and key for Client SSL Authentication.
+
+We will then mount the 2 volumes to the DeploymentConfig
+```
+oc set volume dc/apicast --add --name=mssl --mount-path /opt/app-root/src/apicast.d/location.d/srv_custom.conf --source='{"configMap":{"name":"mssl","items":[{"key":"srv_custom.conf","path":"srv_custom.conf"}]}}'
+oc set volume dc/apicast --add --name=mssld --mount-path /opt/app-root/src/mssl --source='{"configMap":{"name":"mssld","items":[{"key":"cert.pem","path":"cert.pem"},{"key":"key_94744bc5-e945-457f-ad19-c98d1fe24c6f.pem","path":"key_94744bc5-e945-457f-ad19-c98d1fe24c6f.pem"}]}}'
+```
+Once the deployment is over you can go ahead and test using the configured Route for the gateway.
+
 ## References:
 https://medium.com/@Jenananthan/nginx-mutual-ssl-one-way-ssl-with-multiple-clients-ae87b3de0935
 https://www.nginx.com/resources/admin-guide/nginx-tcp-ssl-upstreams/
