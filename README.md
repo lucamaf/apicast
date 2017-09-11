@@ -93,7 +93,7 @@ FROM quay.io/3scale/apicast:master
 
 # Copy customized source code to the appropriate directories
 COPY ./mssl /opt/app-root/src/
-COPY ./srv_custom.conf /opt/app-root/src/apicast.d/location.d/
+COPY ./apicast.d/location.d/srv_custom.conf /opt/app-root/src/apicast.d/location.d/
 ```
 Build the image, push it to your Docker registry, then follow the normal deployment steps described in the APIcast on OpenShift guide. At the oc new-app step add the parameter IMAGE_NAME, replacing the placeholders with your own image name:
 ```
