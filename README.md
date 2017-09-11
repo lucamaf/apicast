@@ -1,4 +1,6 @@
 # Customizing APIcast for Mutual SSL authentication and Basic Auth against Backend API (or Upstream in NGINX terminology)
+(tested on OpenShift v3.5.0)
+
 
 ## Adding Basic Auth
 Basic Auth will just be an additional header value towards the Backend API
@@ -84,6 +86,9 @@ With OpenShift you have to possibilites for APICAST customization:
 - Volume Mounting approach
 We will show the second one and we will leave out the Server SSL configuration as SSL/TLS can already be terminated at the router by using OpenShift routes.
 
+### S2I
+
+### Volume Mount
 We will be using ConfigMap object (https://docs.openshift.org/latest/dev_guide/configmaps.html).
 We will first create the 2 ConfigMaps that we will mount to the gateway later:
 ```
@@ -96,6 +101,8 @@ We will then mount the 2 volumes to the DeploymentConfig
 ```
 oc set volume dc/apicast --add --name=mssl --mount-path /opt/app-root/src/apicast.d/location.d/srv_custom.conf --source='{"configMap":{"name":"mssl","items":[{"key":"srv_custom.conf","path":"srv_custom.conf"}]}}'
 oc set volume dc/apicast --add --name=mssld --mount-path /opt/app-root/src/mssl --source='{"configMap":{"name":"mssld","items":[{"key":"cert.pem","path":"cert.pem"},{"key":"key_94744bc5-e945-457f-ad19-c98d1fe24c6f.pem","path":"key_94744bc5-e945-457f-ad19-c98d1fe24c6f.pem"}]}}'
+
+oc patch dc/apicast --type=json -p '[{"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/0/subPath", "value":"srv_custom.conf"},{"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/1/subPath", "value":"cert.pem"},{"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/2/subPath", "value":"key_94744bc5-e945-457f-ad19-c98d1fe24c6f.pem"}]'
 ```
 Once the deployment is over you can go ahead and test using the configured Route for the gateway.
 
