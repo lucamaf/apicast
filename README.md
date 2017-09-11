@@ -87,6 +87,24 @@ With OpenShift you have to possibilites for APICAST customization:
 We will show the second one and we will leave out the Server SSL configuration as SSL/TLS can already be terminated at the router by using OpenShift routes.
 
 ### S2I
+A new image with the customization can be rebuild, using a simple Dockerfile (save it in the current directory), such as:
+```
+FROM quay.io/3scale/apicast:master
+
+# Copy customized source code to the appropriate directories
+COPY ./mssl /opt/app-root/src/
+COPY ./srv_custom.conf /opt/app-root/src/apicast.d/location.d/
+```
+Build the image, push it to your Docker registry, then follow the normal deployment steps described in the APIcast on OpenShift guide. At the oc new-app step add the parameter IMAGE_NAME, replacing the placeholders with your own image name:
+```
+oc new-app -f https://raw.githubusercontent.com/3scale/apicast/master/openshift/apicast-template.yml -p IMAGE_NAME=<YOUR_DOCKER_REGISTRY>/<USERNAME>/<YOUR_IMAGE_NAME>:<TAG>
+```
+
+Alternatively, you can add the above Dockerfile to your own fork of the apicast Git repository, and have OpenShift do the build. For example:
+```
+oc new-build https://github.com/<YOUR_USERNAME>/apicast --strategy=docker
+```
+
 
 ### Volume Mount
 We will be using ConfigMap object (https://docs.openshift.org/latest/dev_guide/configmaps.html).
